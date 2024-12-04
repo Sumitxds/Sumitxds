@@ -20,7 +20,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Install Docker Compose
-DOCKER_COMPOSE_VERSION="1.29.2"
+DOCKER_COMPOSE_VERSION="${DOCKER_COMPOSE_VERSION:-1.29.2}"
 echo "Installing Docker Compose..."
 curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose || {
     echo "Error: Failed to download Docker Compose. Exiting..."
@@ -32,20 +32,22 @@ chmod +x /usr/local/bin/docker-compose
 mkdir -p target/release
 
 # Download and extract the latest BlockMesh CLI
+BLOCKMESH_CLI_VERSION="v0.0.420"
+BLOCKMESH_CLI_URL="https://github.com/block-mesh/block-mesh-monorepo/releases/download/$BLOCKMESH_CLI_VERSION/block-mesh-manager-api-x86_64-unknown-linux-gnu.tar.gz"
 echo "Downloading and extracting BlockMesh CLI..."
-BLOCKMESH_CLI_URL="https://github.com/block-mesh/block-mesh-monorepo/releases/download/v0.0.420/block-mesh-manager-worker-x86_64-unknown-linux-gnu.tar.gz"
 curl -L "$BLOCKMESH_CLI_URL" -o blockmesh-cli.tar.gz || {
     echo "Error: Failed to download BlockMesh CLI. Exiting..."
     exit 1
 }
+tar -tzf blockmesh-cli.tar.gz # Check archive structure
 tar -xzf blockmesh-cli.tar.gz --strip-components=3 -C target/release || {
     echo "Error: Failed to extract BlockMesh CLI. Exiting..."
     exit 1
 }
 
 # Verify extraction results
-if [[ ! -f target/release/blockmesh-cli ]]; then
-    echo "Error: blockmesh-cli executable not found in target/release. Exiting..."
+if [[ ! -f target/release/block-mesh-manager-api ]]; then
+    echo "Error: block-mesh-manager-api executable not found in target/release. Exiting..."
     exit 1
 fi
 
@@ -62,7 +64,7 @@ docker run -it --rm \
     -e EMAIL="$email" \
     -e PASSWORD="$password" \
     --workdir /app \
-    ubuntu:22.04 ./blockmesh-cli --email "$email" --password "$password" || {
+    ubuntu:22.04 ./block-mesh-manager-api --email "$email" --password "$password" || {
     echo "Error: Failed to run BlockMesh CLI container. Exiting..."
     exit 1
 }
